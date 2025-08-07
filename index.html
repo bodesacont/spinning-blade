@@ -50,6 +50,44 @@
       {
         name: "lightsaber-green",
         bladeColor: "#39FF14",
+        tipColor: "#39FF14",
+        glow: 18,
+        draw: function(ctx, blade) {
+          // Neon glowing blade with matching tip
+          ctx.save();
+          ctx.shadowColor = blade.bladeColor;
+          ctx.shadowBlur = blade.glow;
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = blade.bladeColor;
+          ctx.beginPath();
+          ctx.moveTo(-15, 7);
+          ctx.lineTo(-15, 13);
+          ctx.lineTo(blade.length, 13);
+          ctx.lineTo(blade.length, 7);
+          ctx.closePath();
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.fillStyle = blade.hiltColor;
+          ctx.fillRect(-15, 7, 15, 6);
+
+          ctx.fillStyle = blade.bladeColor;
+          ctx.fillRect(0, 5, blade.length - 15, 10);
+
+          // Tip
+          ctx.beginPath();
+          ctx.moveTo(blade.length - 15, 5);
+          ctx.lineTo(blade.length, 10);
+          ctx.lineTo(blade.length - 15, 15);
+          ctx.closePath();
+          ctx.fillStyle = blade.tipColor;
+          ctx.fill();
+        }
+      },
+      {
+        name: "lightsaber-yellow",
+        bladeColor: "#FFD700",
+        tipColor: "#FFD700",
         glow: 18,
         draw: function(ctx, blade) {
           ctx.save();
@@ -77,13 +115,14 @@
           ctx.lineTo(blade.length, 10);
           ctx.lineTo(blade.length - 15, 15);
           ctx.closePath();
-          ctx.fillStyle = blade.bladeColor;
+          ctx.fillStyle = blade.tipColor;
           ctx.fill();
         }
       },
       {
         name: "lightsaber-red",
         bladeColor: "#FF4444",
+        tipColor: "#FF4444",
         glow: 12,
         draw: function(ctx, blade) {
           ctx.save();
@@ -111,13 +150,14 @@
           ctx.lineTo(blade.length, 10);
           ctx.lineTo(blade.length - 15, 15);
           ctx.closePath();
-          ctx.fillStyle = blade.bladeColor;
+          ctx.fillStyle = blade.tipColor;
           ctx.fill();
         }
       },
       {
         name: "sword",
         bladeColor: "#bbb",
+        tipColor: "#e0e0e0",
         glow: 7,
         draw: function(ctx, blade) {
           ctx.save();
@@ -145,13 +185,14 @@
           ctx.lineTo(blade.length, 10);
           ctx.lineTo(blade.length - 15, 15);
           ctx.closePath();
-          ctx.fillStyle = "#e0e0e0";
+          ctx.fillStyle = blade.tipColor;
           ctx.fill();
         }
       },
       {
         name: "pencil",
         bladeColor: "#FFD700",
+        tipColor: "#e38d5c", // wood color for pencil
         glow: 10,
         draw: function(ctx, blade) {
           ctx.save();
@@ -174,13 +215,15 @@
           ctx.fillStyle = blade.bladeColor;
           ctx.fillRect(0, 5, blade.length - 15, 10);
 
+          // Pencil tip (wood)
           ctx.beginPath();
           ctx.moveTo(blade.length - 15, 5);
           ctx.lineTo(blade.length, 10);
           ctx.lineTo(blade.length - 15, 15);
           ctx.closePath();
-          ctx.fillStyle = "#e38d5c";
+          ctx.fillStyle = blade.tipColor;
           ctx.fill();
+          // Pencil tip (graphite)
           ctx.beginPath();
           ctx.moveTo(blade.length, 10);
           ctx.lineTo(blade.length - 12, 10);
@@ -207,6 +250,7 @@
         length: length,
         height: 20,
         bladeColor: bladeType.bladeColor,
+        tipColor: bladeType.tipColor,
         hiltColor: "#333",
         isPlayer,
         kills: 0,
@@ -246,7 +290,7 @@
     window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false;
 
     // Tripling logic for blades (interval: 1s, 3s, 9s, 27s, ...)
-    let tripleTimer = 60; // 1 sec at 60fps
+    let tripleTimer = 60;
     let tripleDelay = 60;
 
     // Sparks
