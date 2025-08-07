@@ -259,8 +259,8 @@
     window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
     // Tripling logic for blades
-    let tripleTimer = 60;
-    let tripleDelay = 60;
+    let tripleTimer = blades.length * 2 * 60;
+    let tripleDelay = tripleTimer;
 
     let sparks = [];
     let totalKills = 0;
@@ -431,7 +431,7 @@
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Tripling ALL blades as a group
+      // Tripling ALL blades as a group, interval = blades.length * 2 sec
       if (--tripleTimer <= 0) {
         if (blades.length < 243) {
           let newBlades = [];
@@ -453,12 +453,9 @@
             }
           });
           blades = blades.concat(newBlades);
-          tripleDelay *= 3;
-          tripleTimer = tripleDelay;
-        } else {
-          tripleDelay = 60;
-          tripleTimer = tripleDelay;
         }
+        tripleDelay = blades.length * 2 * 60; // blades × 2 sec × 60fps
+        tripleTimer = tripleDelay;
       }
 
       // Player movement
