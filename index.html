@@ -6,9 +6,8 @@
   <style>
     body { margin: 0; background: #222; overflow: hidden; }
     canvas { display: block; background: #222; }
-    #deathCount {
+    #deathCount, #timerDisplay {
       position: absolute;
-      top: 16px;
       left: 50%;
       transform: translateX(-50%);
       color: #fff;
@@ -21,15 +20,19 @@
       pointer-events: none;
       text-shadow: 0 2px 4px #000b;
     }
+    #deathCount { top: 16px; }
+    #timerDisplay { top: 54px; }
   </style>
 </head>
 <body>
   <div id="deathCount">Total Kills: 0</div>
+  <div id="timerDisplay">Time Left: 01:00</div>
   <canvas id="dvdCanvas"></canvas>
   <script>
     const canvas = document.getElementById('dvdCanvas');
     const ctx = canvas.getContext('2d');
     const deathCountDiv = document.getElementById('deathCount');
+    const timerDisplay = document.getElementById('timerDisplay');
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -37,8 +40,13 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
+    // Timer variables
+    let timerFrames = 60 * 60; // 60 seconds * 60fps
+    let gameEnded = false;
+
     // Blade types with proper tips
     const bladeTypes = [
+      // ... (your bladeTypes array unchanged) ...
       {
         name: "lightsaber-green",
         bladeColor: "#39FF14",
@@ -430,6 +438,22 @@
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // TIMER logic
+      if (!gameEnded) {
+        timerFrames--;
+        let secondsLeft = Math.max(0, Math.floor(timerFrames / 60));
+        let min = Math.floor(secondsLeft / 60);
+        let sec = secondsLeft % 60;
+        timerDisplay.textContent = "Time Left: " +
+          (min < 10 ? "0" : "") + min + ":" +
+          (sec < 10 ? "0" : "") + sec;
+        if (timerFrames <= 0) {
+          gameEnded = true;
+          timerDisplay.textContent = "Game Over";
+        }
+      }
+      if (gameEnded) return;
 
       // Tripling ALL blades as a group, interval = blades.length * 2 sec
       if (--tripleTimer <= 0) {
