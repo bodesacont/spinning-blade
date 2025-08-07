@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Spinning Blade Game - Exponential Doubling</title>
+  <title>Spinning Blade Game - Health & Triple</title>
   <style>
     body {
       margin: 0;
@@ -60,8 +60,8 @@
           ctx.beginPath();
           ctx.moveTo(-15, 7);
           ctx.lineTo(-15, 13);
-          ctx.lineTo(blade.width, 13);
-          ctx.lineTo(blade.width, 7);
+          ctx.lineTo(blade.length, 13);
+          ctx.lineTo(blade.length, 7);
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
@@ -70,12 +70,12 @@
           ctx.fillRect(-15, 7, 15, 6);
 
           ctx.fillStyle = blade.bladeColor;
-          ctx.fillRect(0, 5, blade.width - 15, 10);
+          ctx.fillRect(0, 5, blade.length - 15, 10);
 
           ctx.beginPath();
-          ctx.moveTo(blade.width - 15, 5);
-          ctx.lineTo(blade.width, 10);
-          ctx.lineTo(blade.width - 15, 15);
+          ctx.moveTo(blade.length - 15, 5);
+          ctx.lineTo(blade.length, 10);
+          ctx.lineTo(blade.length - 15, 15);
           ctx.closePath();
           ctx.fillStyle = blade.bladeColor;
           ctx.fill();
@@ -94,8 +94,8 @@
           ctx.beginPath();
           ctx.moveTo(-15, 7);
           ctx.lineTo(-15, 13);
-          ctx.lineTo(blade.width, 13);
-          ctx.lineTo(blade.width, 7);
+          ctx.lineTo(blade.length, 13);
+          ctx.lineTo(blade.length, 7);
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
@@ -104,12 +104,12 @@
           ctx.fillRect(-15, 7, 15, 6);
 
           ctx.fillStyle = blade.bladeColor;
-          ctx.fillRect(0, 5, blade.width - 15, 10);
+          ctx.fillRect(0, 5, blade.length - 15, 10);
 
           ctx.beginPath();
-          ctx.moveTo(blade.width - 15, 5);
-          ctx.lineTo(blade.width, 10);
-          ctx.lineTo(blade.width - 15, 15);
+          ctx.moveTo(blade.length - 15, 5);
+          ctx.lineTo(blade.length, 10);
+          ctx.lineTo(blade.length - 15, 15);
           ctx.closePath();
           ctx.fillStyle = blade.bladeColor;
           ctx.fill();
@@ -128,8 +128,8 @@
           ctx.beginPath();
           ctx.moveTo(-15, 7);
           ctx.lineTo(-15, 13);
-          ctx.lineTo(blade.width, 13);
-          ctx.lineTo(blade.width, 7);
+          ctx.lineTo(blade.length, 13);
+          ctx.lineTo(blade.length, 7);
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
@@ -138,12 +138,12 @@
           ctx.fillRect(-15, 7, 15, 6);
 
           ctx.fillStyle = blade.bladeColor;
-          ctx.fillRect(0, 5, blade.width - 15, 10);
+          ctx.fillRect(0, 5, blade.length - 15, 10);
 
           ctx.beginPath();
-          ctx.moveTo(blade.width - 15, 5);
-          ctx.lineTo(blade.width, 10);
-          ctx.lineTo(blade.width - 15, 15);
+          ctx.moveTo(blade.length - 15, 5);
+          ctx.lineTo(blade.length, 10);
+          ctx.lineTo(blade.length - 15, 15);
           ctx.closePath();
           ctx.fillStyle = "#e0e0e0";
           ctx.fill();
@@ -162,8 +162,8 @@
           ctx.beginPath();
           ctx.moveTo(-15, 7);
           ctx.lineTo(-15, 13);
-          ctx.lineTo(blade.width, 13);
-          ctx.lineTo(blade.width, 7);
+          ctx.lineTo(blade.length, 13);
+          ctx.lineTo(blade.length, 7);
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
@@ -172,20 +172,19 @@
           ctx.fillRect(-15, 7, 15, 6);
 
           ctx.fillStyle = blade.bladeColor;
-          ctx.fillRect(0, 5, blade.width - 15, 10);
+          ctx.fillRect(0, 5, blade.length - 15, 10);
 
-          // Pencil tip
           ctx.beginPath();
-          ctx.moveTo(blade.width - 15, 5);
-          ctx.lineTo(blade.width, 10);
-          ctx.lineTo(blade.width - 15, 15);
+          ctx.moveTo(blade.length - 15, 5);
+          ctx.lineTo(blade.length, 10);
+          ctx.lineTo(blade.length - 15, 15);
           ctx.closePath();
           ctx.fillStyle = "#e38d5c";
           ctx.fill();
           ctx.beginPath();
-          ctx.moveTo(blade.width, 10);
-          ctx.lineTo(blade.width - 12, 10);
-          ctx.lineTo(blade.width - 15, 13);
+          ctx.moveTo(blade.length, 10);
+          ctx.lineTo(blade.length - 12, 10);
+          ctx.lineTo(blade.length - 15, 13);
           ctx.closePath();
           ctx.fillStyle = "#111";
           ctx.fill();
@@ -205,12 +204,14 @@
         vy,
         angle: 0,
         spinSpeed,
-        width: length,
+        length: length,
         height: 20,
         bladeColor: bladeType.bladeColor,
         hiltColor: "#333",
         isPlayer,
         kills: 0,
+        health: 100,
+        maxHealth: 100,
         type: bladeType,
         glow: isPlayer ? 18 : bladeType.glow,
         id: Math.random().toString(36).substr(2, 6)
@@ -244,9 +245,9 @@
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
     window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-    // Doubling logic for blades
-    let doubleTimer = 60; // frames until first double (~1 sec at 60fps)
-    let doubleDelay = 60; // delay in frames, doubles each time
+    // Triple logic for blades
+    let tripleTimer = 60; // 1 sec at 60fps
+    let tripleDelay = 60;
 
     // Sparks
     let sparks = [];
@@ -262,9 +263,26 @@
       ctx.fillStyle = blade.bladeColor;
       ctx.strokeStyle = "#000";
       ctx.lineWidth = 2;
-      ctx.translate(0, -20);
+      ctx.translate(0, -28);
       ctx.strokeText(blade.kills, 0, 0);
       ctx.fillText(blade.kills, 0, 0);
+      ctx.restore();
+    }
+
+    function drawHealthBar(ctx, blade) {
+      ctx.save();
+      ctx.translate(0, -10);
+      const barWidth = 60, barHeight = 8;
+      // Background
+      ctx.fillStyle = "#222";
+      ctx.fillRect(-barWidth/2, 0, barWidth, barHeight);
+      // Health
+      let healthRatio = Math.max(0, blade.health) / blade.maxHealth;
+      ctx.fillStyle = healthRatio > 0.5 ? "#39FF14"
+        : healthRatio > 0.25 ? "#FFD700" : "#FF4444";
+      ctx.fillRect(-barWidth/2, 0, barWidth * healthRatio, barHeight);
+      ctx.strokeStyle = "#fff";
+      ctx.strokeRect(-barWidth/2, 0, barWidth, barHeight);
       ctx.restore();
     }
 
@@ -298,8 +316,8 @@
       const bladePoly = [
         {x: -15, y: 7},
         {x: -15, y: 13},
-        {x: blade.width, y: 13},
-        {x: blade.width, y: 7}
+        {x: blade.length, y: 13},
+        {x: blade.length, y: 7}
       ];
       const cos = Math.cos(blade.angle);
       const sin = Math.sin(blade.angle);
@@ -344,8 +362,8 @@
       const bladePoly = [
         {x: -15, y: 7},
         {x: -15, y: 13},
-        {x: blade.width, y: 13},
-        {x: blade.width, y: 7}
+        {x: blade.length, y: 13},
+        {x: blade.length, y: 7}
       ];
       const cos = Math.cos(blade.angle);
       const sin = Math.sin(blade.angle);
@@ -412,26 +430,33 @@
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Doubling ALL blades as a group
-      if (--doubleTimer <= 0) {
-        // Only double if less than some max, e.g. 32 blades
-        if (blades.length < 32) {
+      // Triple ALL blades as a group
+      if (--tripleTimer <= 0) {
+        if (blades.length < 81) { // 81 = 3^4, four generations
           let newBlades = [];
           blades.forEach(b => {
-            // Clone blade with tiny random offset & velocity
-            const bladeType = b.type;
-            newBlades.push(makeBlade(
-              b.x + Math.random()*30-15, b.y + Math.random()*30-15,
-              (Math.random()*4-2), (Math.random()*4-2),
-              b.spinSpeed, b.width, bladeType, false
-            ));
+            for (let t = 0; t < 2; t++) { // spawn 2 new (triple total)
+              const bladeType = randomBladeType();
+              const len = Math.floor(Math.random() * 60) + 40;
+              const angle = Math.random() * Math.PI * 2;
+              const speed = Math.random() * 3 + 2;
+              newBlades.push(makeBlade(
+                b.x + Math.random()*30-15,
+                b.y + Math.random()*30-15,
+                Math.cos(angle)*speed,
+                Math.sin(angle)*speed,
+                Math.random()*0.15+0.05,
+                len,
+                bladeType
+              ));
+            }
           });
           blades = blades.concat(newBlades);
-          doubleDelay *= 2;
-          doubleTimer = doubleDelay;
+          tripleDelay *= 2;
+          tripleTimer = tripleDelay;
         } else {
-          doubleDelay = 60; // After 32 blades, keep at max (no reset)
-          doubleTimer = doubleDelay;
+          tripleDelay = 60;
+          tripleTimer = tripleDelay;
         }
       }
 
@@ -468,21 +493,27 @@
       if (dotKills.length > 0) {
         let bladesKilled = {};
         dotKills.forEach(kill => {
-          blades[kill.bladeIdx].kills += 1;
+          let blade = blades[kill.bladeIdx];
+          blade.kills += 1;
           totalKills++;
           bladesKilled[kill.dotIdx] = true;
+          // Increase health and blade length on kill
+          blade.health = Math.min(blade.maxHealth, blade.health + 20);
+          blade.length = Math.min(120, blade.length + 10);
         });
         let killedDotIndices = Object.keys(bladesKilled).map(Number);
 
-        if (dots.length < 16) {
+        if (dots.length < 27) { // triple until 27
           let newDots = [];
           for (const dotIdx of killedDotIndices) {
             respawnDot(dots[dotIdx]);
-            newDots.push({
-              x: Math.random() * (canvas.width - 30) + 15,
-              y: Math.random() * (canvas.height - 30) + 15,
-              radius: 10
-            });
+            for (let t = 0; t < 2; t++) { // spawn 2 new (triple total)
+              newDots.push({
+                x: Math.random() * (canvas.width - 30) + 15,
+                y: Math.random() * (canvas.height - 30) + 15,
+                radius: 10
+              });
+            }
           }
           dots = dots.concat(newDots);
         } else {
@@ -498,6 +529,12 @@
       for (let i = 0; i < blades.length; ++i) {
         for (let j = i + 1; j < blades.length; ++j) {
           if (checkBladeBladeCollision(blades[i], blades[j])) {
+            // Decrease health and blade length
+            blades[i].health = Math.max(0, blades[i].health - 10);
+            blades[j].health = Math.max(0, blades[j].health - 10);
+            blades[i].length = Math.max(30, blades[i].length - 5);
+            blades[j].length = Math.max(30, blades[j].length - 5);
+            // Spark only if both blades are colored (i.e., not gray/black)
             if (blades[i].bladeColor && blades[j].bladeColor) {
               let sx = (blades[i].x + blades[j].x) / 2;
               let sy = (blades[i].y + blades[j].y) / 2;
@@ -522,6 +559,7 @@
         ctx.translate(blade.x, blade.y);
         ctx.rotate(blade.angle);
         blade.type.draw(ctx, blade);
+        drawHealthBar(ctx, blade);
         drawKills(ctx, blade);
         ctx.restore();
       });
