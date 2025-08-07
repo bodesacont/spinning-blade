@@ -488,10 +488,11 @@
       if (keys['s']) playerBlade.y += 5;
       if (keys['a']) playerBlade.x -= 5;
       if (keys['d']) playerBlade.x += 5;
-      if (keys['&uarr']) playerBlade.y -= 5;
-      if (keys['&darr']) playerBlade.y += 5;
-      if (keys['&larr']) playerBlade.x -= 5;
-      if (keys['&rarr']) playerBlade.x += 5;
+      if (keys['ArrowUp']) playerBlade.y -= 5;
+      if (keys['ArrowDown']) playerBlade.y += 5;
+      if (keys['ArrowLeft']) playerBlade.x -= 5;
+      if (keys['ArrowRight']) playerBlade.x += 5;
+
       playerBlade.x = Math.max(0, Math.min(canvas.width, playerBlade.x));
       playerBlade.y = Math.max(0, Math.min(canvas.height, playerBlade.y));
 
