@@ -38,7 +38,6 @@
     const ctx = canvas.getContext('2d');
     const addSwordBtn = document.getElementById('addSwordBtn');
 
-    // Set canvas to window size
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -46,8 +45,20 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Blade definition
-    function makeBlade(x, y, vx, vy, spinSpeed) {
+    // Different blade skins
+    const bladeSkins = [
+      { blade: "#bbb", tip: "#e0e0e0", handle: "#7b3f00" }, // classic
+      { blade: "#ffe066", tip: "#ffadad", handle: "#6a4c93" }, // gold/pink/purple
+      { blade: "#b0e0e6", tip: "#40c057", handle: "#212529" }, // teal/green/black
+      { blade: "#ff922b", tip: "#f8f9fa", handle: "#343a40" }, // orange/white/dark
+      { blade: "#adb5bd", tip: "#f03e3e", handle: "#495057" }, // gray/red/dark
+    ];
+
+    function randomBladeSkin() {
+      return bladeSkins[Math.floor(Math.random() * bladeSkins.length)];
+    }
+
+    function makeBlade(x, y, vx, vy, spinSpeed, length, skin) {
       return {
         x,
         y,
@@ -55,14 +66,23 @@
         vy,
         angle: 0,
         spinSpeed,
-        width: 70,
-        height: 20
+        width: length, // variable length
+        height: 20,
+        skin
       };
     }
 
     // Blades array: first is player-controlled
     const blades = [
-      makeBlade(canvas.width / 2, canvas.height / 2, 0, 0, 0.08)
+      makeBlade(
+        canvas.width / 2,
+        canvas.height / 2,
+        0,
+        0,
+        0.08,
+        70,
+        bladeSkins[0]
+      )
     ];
 
     // Dot definition
@@ -78,26 +98,25 @@
     window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
     // Draw blade (rotates around hilt)
-    function drawBlade(ctx) {
+    function drawBlade(ctx, blade) {
       ctx.save();
-      ctx.rotate(0);
       // Handle (hilt)
-      ctx.fillStyle = "#7b3f00";
+      ctx.fillStyle = blade.skin.handle;
       ctx.fillRect(-15, 7, 15, 6);
       // Blade
-      ctx.fillStyle = "#bbb";
-      ctx.fillRect(0, 5, 40, 10);
+      ctx.fillStyle = blade.skin.blade;
+      ctx.fillRect(0, 5, blade.width - 15, 10);
       // Tip
-      ctx.fillStyle = "#e0e0e0";
+      ctx.fillStyle = blade.skin.tip;
       ctx.beginPath();
-      ctx.moveTo(40, 5);
-      ctx.lineTo(55, 10);
-      ctx.lineTo(40, 15);
+      ctx.moveTo(blade.width - 15, 5);
+      ctx.lineTo(blade.width, 10);
+      ctx.lineTo(blade.width - 15, 15);
       ctx.closePath();
       ctx.fill();
       // Pixelation effect
       ctx.strokeStyle = "rgba(0,0,0,0.15)";
-      for (let i = -15; i < 56; i += 5) {
+      for (let i = -15; i < blade.width + 1; i += 5) {
         ctx.beginPath();
         ctx.moveTo(i, 0);
         ctx.lineTo(i, 20);
@@ -106,7 +125,7 @@
       for (let j = 0; j <= 20; j += 5) {
         ctx.beginPath();
         ctx.moveTo(-15, j);
-        ctx.lineTo(55, j);
+        ctx.lineTo(blade.width, j);
         ctx.stroke();
       }
       ctx.restore();
@@ -121,14 +140,14 @@
       ctx.closePath();
     }
 
-    // Collision check: dot vs blade polygon
+    // Collision: dot vs blade polygon (anywhere on blade)
     function checkDotBladeCollision(blade) {
       // Blade corners in local coordinates
       const bladePoly = [
         {x: -15, y: 7},    // handle left top
         {x: -15, y: 13},   // handle left bottom
-        {x: 55, y: 13},    // tip bottom
-        {x: 55, y: 7}      // tip top
+        {x: blade.width, y: 13},    // tip bottom
+        {x: blade.width, y: 7}      // tip top
       ];
 
       // Transform each point by blade's position and angle
@@ -154,14 +173,12 @@
         return inside;
       }
 
-      // If dot center is inside polygon
       if (pointInPoly(dot.x, dot.y, worldPoly)) return true;
 
       // Or if dot is close to any edge
       for (let i = 0; i < worldPoly.length; i++) {
         const a = worldPoly[i];
         const b = worldPoly[(i+1)%worldPoly.length];
-        // Closest point on line segment to dot center
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const l2 = dx*dx + dy*dy;
@@ -184,11 +201,12 @@
     addSwordBtn.onclick = () => {
       const x = Math.random() * (canvas.width - 100) + 50;
       const y = Math.random() * (canvas.height - 100) + 50;
-      // Random movement and spin
       const vx = Math.random() * 6 - 3;
       const vy = Math.random() * 6 - 3;
       const spinSpeed = Math.random() * 0.15 + 0.05;
-      blades.push(makeBlade(x, y, vx, vy, spinSpeed));
+      const length = Math.floor(Math.random() * 80) + 40; // Between 40 and 120 px
+      const skin = randomBladeSkin();
+      blades.push(makeBlade(x, y, vx, vy, spinSpeed, length, skin));
     };
 
     function animate() {
@@ -222,7 +240,7 @@
         ctx.save();
         ctx.translate(blade.x, blade.y);
         ctx.rotate(blade.angle);
-        drawBlade(ctx);
+        drawBlade(ctx, blade);
         ctx.restore();
       });
 
