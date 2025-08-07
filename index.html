@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Spinning Blade Game</title>
+  <title>Spinning Blade Game - Lightsaber Edition</title>
   <style>
     body {
       margin: 0;
@@ -13,33 +13,13 @@
       display: block;
       background: #222;
     }
-    #addSwordBtn {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 8px 18px;
-      font-size: 18px;
-      background: #444;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      z-index: 2;
-      opacity: 0.92;
-    }
   </style>
 </head>
 <body>
-  <button id="addSwordBtn">Add Sword</button>
   <canvas id="dvdCanvas"></canvas>
-  <!-- Clank sound as base64 WAV, very short (replace with .wav or better sound if desired) -->
-  <audio id="clankAudio" src="data:audio/wav;base64,UklGRrQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYwAAACAgICAgICAgP8AAAD/AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAAA=" preload="auto"></audio>
   <script>
     const canvas = document.getElementById('dvdCanvas');
     const ctx = canvas.getContext('2d');
-    const addSwordBtn = document.getElementById('addSwordBtn');
-    const clankAudio = document.getElementById('clankAudio');
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
@@ -48,18 +28,18 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    const bladeSkins = [
-      { blade: "#bbb", tip: "#e0e0e0", handle: "#7b3f00" },
-      { blade: "#ffe066", tip: "#ffadad", handle: "#6a4c93" },
-      { blade: "#b0e0e6", tip: "#40c057", handle: "#212529" },
-      { blade: "#ff922b", tip: "#f8f9fa", handle: "#343a40" },
-      { blade: "#adb5bd", tip: "#f03e3e", handle: "#495057" },
+    // Lightsaber blade colors
+    const saberColors = [
+      "#39FF14", // neon green (player)
+      "#FF4444", // red
+      "#44AFFF", // blue
+      "#FFD700", // yellow
+      "#FF66CC", // pink
+      "#00FFFF", // cyan
     ];
-    function randomBladeSkin() {
-      return bladeSkins[Math.floor(Math.random() * bladeSkins.length)];
-    }
+    const baseHilt = "#222"; // fixed hilt color
 
-    function makeBlade(x, y, vx, vy, spinSpeed, length, skin, isPlayer=false) {
+    function makeBlade(x, y, vx, vy, spinSpeed, length, color, isPlayer=false) {
       return {
         x,
         y,
@@ -69,83 +49,75 @@
         spinSpeed,
         width: length,
         height: 20,
-        skin,
+        color,         // blade and tip
+        hilt: baseHilt,
         isPlayer,
         kills: 0,
+        glow: isPlayer ? 18 : 10, // player glows more
         id: Math.random().toString(36).substr(2, 6)
       };
     }
 
-    // Blades array: first is player-controlled
-    const blades = [
+    // Blades start with the player
+    let blades = [
       makeBlade(
         canvas.width / 2,
         canvas.height / 2,
-        0, 0, 0.08, 70, bladeSkins[0], true
+        0, 0, 0.08, 70, saberColors[0], true
       )
     ];
 
-    // Dots: can be more than one!
-    let dots = [
-      {
-        x: Math.random() * (canvas.width - 30) + 15,
-        y: Math.random() * (canvas.height - 30) + 15,
-        radius: 10
-      }
-    ];
+    // Dots: start with one
+    let dots = [{
+      x: Math.random() * (canvas.width - 30) + 15,
+      y: Math.random() * (canvas.height - 30) + 15,
+      radius: 10
+    }];
 
     // WASD movement for player blade
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
     window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-    // Draw blade (rotates around hilt)
+    // Doubling logic
+    let doubleTimer = 120; // frames until first double (~2 sec at 60fps)
+    let doubleDelay = 120; // delay in frames, doubles each time
+
+    // Sparks
+    let sparks = [];
+
+    // Draw blade (glowing colored style)
     function drawBlade(ctx, blade) {
       ctx.save();
-      // Neon green outline for player
-      if (blade.isPlayer) {
-        ctx.save();
-        ctx.shadowColor = "#39FF14";
-        ctx.shadowBlur = 16;
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#39FF14";
-        ctx.beginPath();
-        ctx.moveTo(-15, 7);
-        ctx.lineTo(-15, 13);
-        ctx.lineTo(blade.width, 13);
-        ctx.lineTo(blade.width, 7);
-        ctx.closePath();
-        ctx.stroke();
-        ctx.restore();
-      }
+      // Glow effect
+      ctx.save();
+      ctx.shadowColor = blade.color;
+      ctx.shadowBlur = blade.glow;
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = blade.color;
+      ctx.beginPath();
+      ctx.moveTo(-15, 7);
+      ctx.lineTo(-15, 13);
+      ctx.lineTo(blade.width, 13);
+      ctx.lineTo(blade.width, 7);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+
       // Handle (hilt)
-      ctx.fillStyle = blade.skin.handle;
+      ctx.fillStyle = blade.hilt;
       ctx.fillRect(-15, 7, 15, 6);
       // Blade
-      ctx.fillStyle = blade.skin.blade;
+      ctx.fillStyle = blade.color;
       ctx.fillRect(0, 5, blade.width - 15, 10);
-      // Tip
-      ctx.fillStyle = blade.skin.tip;
+      // Tip (same color as blade)
+      ctx.fillStyle = blade.color;
       ctx.beginPath();
       ctx.moveTo(blade.width - 15, 5);
       ctx.lineTo(blade.width, 10);
       ctx.lineTo(blade.width - 15, 15);
       ctx.closePath();
       ctx.fill();
-      // Pixelation effect
-      ctx.strokeStyle = "rgba(0,0,0,0.15)";
-      for (let i = -15; i < blade.width + 1; i += 5) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, 20);
-        ctx.stroke();
-      }
-      for (let j = 0; j <= 20; j += 5) {
-        ctx.beginPath();
-        ctx.moveTo(-15, j);
-        ctx.lineTo(blade.width, j);
-        ctx.stroke();
-      }
       ctx.restore();
     }
 
@@ -153,7 +125,7 @@
     function drawDot(ctx, dot) {
       ctx.beginPath();
       ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
-      ctx.fillStyle = "#ff4444";
+      ctx.fillStyle = "#fff";
       ctx.fill();
       ctx.closePath();
     }
@@ -164,7 +136,7 @@
       ctx.font = "bold 20px monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
-      ctx.fillStyle = blade.isPlayer ? "#39FF14" : "#fff";
+      ctx.fillStyle = blade.color;
       ctx.strokeStyle = "#000";
       ctx.lineWidth = 2;
       ctx.translate(0, -20);
@@ -173,16 +145,33 @@
       ctx.restore();
     }
 
+    // Draw sparks
+    function drawSparks(ctx) {
+      sparks = sparks.filter(spark => spark.life > 0);
+      sparks.forEach(spark => {
+        ctx.save();
+        ctx.globalAlpha = spark.life / spark.maxLife;
+        ctx.strokeStyle = spark.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(spark.x, spark.y);
+        ctx.lineTo(spark.x + spark.dx, spark.y + spark.dy);
+        ctx.stroke();
+        ctx.restore();
+        spark.x += spark.dx * 0.2;
+        spark.y += spark.dy * 0.2;
+        spark.life--;
+      });
+    }
+
     // Collision: dot vs blade polygon (anywhere on blade)
     function checkDotBladeCollision(blade, dot) {
-      // Blade corners in local coordinates
       const bladePoly = [
         {x: -15, y: 7},
         {x: -15, y: 13},
         {x: blade.width, y: 13},
         {x: blade.width, y: 7}
       ];
-      // Transform each point by blade's position and angle
       const cos = Math.cos(blade.angle);
       const sin = Math.sin(blade.angle);
       const worldPoly = bladePoly.map(pt => ({
@@ -201,7 +190,6 @@
         return inside;
       }
       if (pointInPoly(dot.x, dot.y, worldPoly)) return true;
-      // Or if dot is close to any edge
       for (let i = 0; i < worldPoly.length; i++) {
         const a = worldPoly[i];
         const b = worldPoly[(i+1)%worldPoly.length];
@@ -218,9 +206,8 @@
       return false;
     }
 
-    // Collision: blade vs blade (bounding box then polygon)
+    // Blade vs blade collision
     function checkBladeBladeCollision(b1, b2) {
-      // For simplicity, use bounding boxes first
       const r1 = getBladePolyWorld(b1);
       const r2 = getBladePolyWorld(b2);
       return polysIntersect(r1, r2);
@@ -239,7 +226,6 @@
         y: blade.y + pt.x * sin + pt.y * cos
       }));
     }
-    // Polygon collision
     function polysIntersect(polyA, polyB) {
       function getAxes(poly) {
         const axes = [];
@@ -275,23 +261,70 @@
       dotObj.y = Math.random() * (canvas.height - 30) + 15;
     }
 
-    // Add Sword button handler
-    addSwordBtn.onclick = () => {
-      const x = Math.random() * (canvas.width - 100) + 50;
-      const y = Math.random() * (canvas.height - 100) + 50;
-      const vx = Math.random() * 6 - 3;
-      const vy = Math.random() * 6 - 3;
-      const spinSpeed = Math.random() * 0.15 + 0.05;
-      const length = Math.floor(Math.random() * 80) + 40;
-      const skin = randomBladeSkin();
-      blades.push(makeBlade(x, y, vx, vy, spinSpeed, length, skin));
-    };
+    function randomSaberColor() {
+      return saberColors[Math.floor(Math.random() * saberColors.length)];
+    }
 
-    // Helper for sword collision sound (avoid repeats)
-    let lastClankPairs = new Set();
+    function randomLength() {
+      return Math.floor(Math.random() * 80) + 40;
+    }
 
+    // Helper for spark color blend
+    function blendColors(c1, c2) {
+      // c1, c2 are hex strings: "#RRGGBB"
+      function hexToRgb(hex) {
+        hex = hex.replace("#","");
+        return [
+          parseInt(hex.substring(0,2),16),
+          parseInt(hex.substring(2,4),16),
+          parseInt(hex.substring(4,6),16)
+        ];
+      }
+      function rgbToHex(r,g,b) {
+        return "#" + [r,g,b].map(x => x.toString(16).padStart(2,"0")).join("");
+      }
+      let rgb1 = hexToRgb(c1), rgb2 = hexToRgb(c2);
+      return rgbToHex(
+        Math.floor((rgb1[0]+rgb2[0])/2),
+        Math.floor((rgb1[1]+rgb2[1])/2),
+        Math.floor((rgb1[2]+rgb2[2])/2)
+      );
+    }
+
+    // Main loop
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Doubling logic for blades
+      if (--doubleTimer <= 0) {
+        // Only double if less than some max, e.g. 16 blades
+        if (blades.length < 16) {
+          // For each blade, add a new one with random color, velocity, length
+          let newBlades = [];
+          blades.forEach(b => {
+            const color = randomSaberColor();
+            const len = randomLength();
+            const angle = Math.random()*Math.PI*2;
+            const speed = Math.random()*3+2;
+            newBlades.push(makeBlade(
+              b.x, b.y,
+              Math.cos(angle)*speed, Math.sin(angle)*speed,
+              Math.random()*0.15+0.05, len, color
+            ));
+          });
+          blades = blades.concat(newBlades);
+          doubleDelay *= 2;
+          doubleTimer = doubleDelay;
+        } else {
+          // Reset to one blade (player only)
+          blades = [makeBlade(
+            canvas.width / 2, canvas.height / 2,
+            0, 0, 0.08, 70, saberColors[0], true
+          )];
+          doubleDelay = 120;
+          doubleTimer = doubleDelay;
+        }
+      }
 
       // Player movement
       const playerBlade = blades[0];
@@ -315,7 +348,7 @@
       blades.forEach(blade => blade.angle += blade.spinSpeed);
 
       // --- Dot logic ---
-      // Collect which blades kill which dots
+      // Blades kill dots
       let dotKills = [];
       dots.forEach((dotObj, dotIdx) => {
         blades.forEach((blade, bladeIdx) => {
@@ -324,15 +357,12 @@
           }
         });
       });
-      // Handle kills & respawn dots
       if (dotKills.length > 0) {
-        // Count kills per blade
         let bladesKilled = {};
         dotKills.forEach(kill => {
           blades[kill.bladeIdx].kills += 1;
           bladesKilled[kill.dotIdx] = true;
         });
-        // For each killed dot, respawn
         let killedDotIndices = Object.keys(bladesKilled).map(Number);
 
         // Doubling logic
@@ -340,7 +370,6 @@
           let newDots = [];
           for (const dotIdx of killedDotIndices) {
             respawnDot(dots[dotIdx]);
-            // Add a new dot at random place
             newDots.push({
               x: Math.random() * (canvas.width - 30) + 15,
               y: Math.random() * (canvas.height - 30) + 15,
@@ -349,7 +378,6 @@
           }
           dots = dots.concat(newDots);
         } else {
-          // Reset to 1 dot
           dots = [{
             x: Math.random() * (canvas.width - 30) + 15,
             y: Math.random() * (canvas.height - 30) + 15,
@@ -358,24 +386,31 @@
         }
       }
 
-      // --- Sword vs Sword collision ---
-      let curClankPairs = new Set();
+      // --- Sword vs Sword collision & sparks ---
       for (let i = 0; i < blades.length; ++i) {
         for (let j = i + 1; j < blades.length; ++j) {
           if (checkBladeBladeCollision(blades[i], blades[j])) {
-            // Increase kill count if want to count sword kills (optional)
-            // blades[i].kills += 1; blades[j].kills += 1;
-            // Play sound once per pair per frame
-            let pairId = [blades[i].id, blades[j].id].sort().join("-");
-            curClankPairs.add(pairId);
-            if (!lastClankPairs.has(pairId)) {
-              clankAudio.currentTime = 0;
-              clankAudio.play();
+            // Spark only if both blades are lightsabers (colored, i.e., not black/gray)
+            if (blades[i].color && blades[j].color) {
+              // Find intersection point (approximate: midpoint between blade centers)
+              let sx = (blades[i].x + blades[j].x) / 2;
+              let sy = (blades[i].y + blades[j].y) / 2;
+              // Spark direction random
+              for (let s = 0; s < 8; s++) {
+                let theta = Math.random() * Math.PI * 2;
+                let len = Math.random() * 25 + 10;
+                sparks.push({
+                  x: sx, y: sy,
+                  dx: Math.cos(theta)*len,
+                  dy: Math.sin(theta)*len,
+                  color: blendColors(blades[i].color, blades[j].color),
+                  life: 16, maxLife: 16
+                });
+              }
             }
           }
         }
       }
-      lastClankPairs = curClankPairs;
 
       // Draw blades + kill numbers
       blades.forEach(blade => {
@@ -389,6 +424,9 @@
 
       // Draw dots
       dots.forEach(dot => drawDot(ctx, dot));
+
+      // Draw sparks
+      drawSparks(ctx);
 
       requestAnimationFrame(animate);
     }
