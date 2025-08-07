@@ -29,11 +29,119 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
+    // Blade types
+    const bladeDrawers = [
+      // Knife (Default)
+      function(ctx) {
+        ctx.fillStyle = "#bbb";
+        ctx.fillRect(0, 5, 40, 10);
+        ctx.fillStyle = "#e0e0e0";
+        ctx.beginPath();
+        ctx.moveTo(40, 5);
+        ctx.lineTo(55, 10);
+        ctx.lineTo(40, 15);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#7b3f00";
+        ctx.fillRect(-15, 7, 15, 6);
+        ctx.fillStyle = "#333";
+        ctx.fillRect(-10, 8, 3, 4);
+        ctx.fillRect(-5, 8, 3, 4);
+        // Pixelation effect
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        for (let i = -15; i < 56; i += 5) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, 20);
+          ctx.stroke();
+        }
+        for (let j = 0; j <= 20; j += 5) {
+          ctx.beginPath();
+          ctx.moveTo(-15, j);
+          ctx.lineTo(55, j);
+          ctx.stroke();
+        }
+      },
+      // Katana
+      function(ctx) {
+        // Blade
+        ctx.fillStyle = "#dde";
+        ctx.fillRect(0, 8, 60, 6);
+        ctx.fillStyle = "#aaa";
+        ctx.beginPath();
+        ctx.moveTo(60, 8);
+        ctx.lineTo(70, 11);
+        ctx.lineTo(60, 14);
+        ctx.closePath();
+        ctx.fill();
+        // Handle
+        ctx.fillStyle = "#4b1b07";
+        ctx.fillRect(-20, 9, 20, 4);
+        // Guard
+        ctx.fillStyle = "#cfc200";
+        ctx.fillRect(-2, 7, 4, 10);
+        // Pixelation effect
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        for (let i = -20; i < 71; i += 5) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, 20);
+          ctx.stroke();
+        }
+        for (let j = 0; j <= 20; j += 5) {
+          ctx.beginPath();
+          ctx.moveTo(-20, j);
+          ctx.lineTo(70, j);
+          ctx.stroke();
+        }
+      },
+      // Longsword
+      function(ctx) {
+        // Blade
+        ctx.fillStyle = "#c0c0c0";
+        ctx.fillRect(0, 6, 50, 8);
+        ctx.fillStyle = "#f8f8f8";
+        ctx.beginPath();
+        ctx.moveTo(50, 6);
+        ctx.lineTo(60, 10);
+        ctx.lineTo(50, 14);
+        ctx.closePath();
+        ctx.fill();
+        // Handle
+        ctx.fillStyle = "#5a3711";
+        ctx.fillRect(-15, 8, 15, 4);
+        // Guard
+        ctx.fillStyle = "#b2a56a";
+        ctx.fillRect(-2, 5, 4, 12);
+        // Pommel
+        ctx.beginPath();
+        ctx.arc(-15, 10, 3, 0, Math.PI * 2);
+        ctx.fillStyle = "#b2a56a";
+        ctx.fill();
+        // Pixelation effect
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        for (let i = -15; i < 61; i += 5) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, 20);
+          ctx.stroke();
+        }
+        for (let j = 0; j <= 20; j += 5) {
+          ctx.beginPath();
+          ctx.moveTo(-15, j);
+          ctx.lineTo(60, j);
+          ctx.stroke();
+        }
+      }
+    ];
+
+    let bladeIndex = 0;
+
     // Knife properties
     const knife = {
       x: Math.random() * (canvas.width - 60) + 30,
       y: Math.random() * (canvas.height - 60) + 30,
-      width: 60,
+      width: 70,
       height: 20,
       vx: 3,
       vy: 2,
@@ -41,45 +149,35 @@
       spinSpeed: 0.08
     };
 
-    // Draw a pixelated knife
-    function drawKnife(ctx) {
-      // Draw blade (gray rectangle)
-      ctx.fillStyle = "#bbb";
-      ctx.fillRect(0, 5, 40, 10);
-
-      // Draw tip (triangle)
-      ctx.fillStyle = "#e0e0e0";
-      ctx.beginPath();
-      ctx.moveTo(40, 5);
-      ctx.lineTo(55, 10);
-      ctx.lineTo(40, 15);
-      ctx.closePath();
-      ctx.fill();
-
-      // Draw handle (brown rectangle)
-      ctx.fillStyle = "#7b3f00";
-      ctx.fillRect(-15, 7, 15, 6);
-
-      // Add a few "pixel" lines for style
-      ctx.fillStyle = "#333";
-      ctx.fillRect(-10, 8, 3, 4);
-      ctx.fillRect(-5, 8, 3, 4);
-
-      // "Pixelation effect": draw a grid overlay
-      ctx.strokeStyle = "rgba(0,0,0,0.15)";
-      for (let i = -15; i < 56; i += 5) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, 20);
-        ctx.stroke();
-      }
-      for (let j = 0; j <= 20; j += 5) {
-        ctx.beginPath();
-        ctx.moveTo(-15, j);
-        ctx.lineTo(55, j);
-        ctx.stroke();
-      }
+    // Checks if mouse is over the blade
+    function isMouseOverBlade(mouseX, mouseY) {
+      // Transform mouse coordinates to blade's rotated system
+      const cx = knife.x + knife.width / 2;
+      const cy = knife.y + knife.height / 2;
+      const dx = mouseX - cx;
+      const dy = mouseY - cy;
+      const r = -knife.angle;
+      // Undo rotation
+      const rx = dx * Math.cos(r) - dy * Math.sin(r);
+      const ry = dx * Math.sin(r) + dy * Math.cos(r);
+      // Check if inside blade rectangle
+      return (
+        rx > -knife.width / 2 &&
+        rx < knife.width / 2 &&
+        ry > -knife.height / 2 &&
+        ry < knife.height / 2
+      );
     }
+
+    canvas.addEventListener('mousedown', function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      if (isMouseOverBlade(mouseX, mouseY)) {
+        bladeIndex = (bladeIndex + 1) % bladeDrawers.length;
+      }
+    });
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -91,7 +189,7 @@
       // Bounce off walls
       if (knife.x < 0 || knife.x + knife.width > canvas.width) {
         knife.vx *= -1;
-        knife.angle += Math.PI / 4; // fun extra spin on bounce
+        knife.angle += Math.PI / 4;
       }
       if (knife.y < 0 || knife.y + knife.height > canvas.height) {
         knife.vy *= -1;
@@ -101,12 +199,12 @@
       // Spin knife
       knife.angle += knife.spinSpeed;
 
-      // Draw knife with rotation
+      // Draw current blade
       ctx.save();
       ctx.translate(knife.x + knife.width / 2, knife.y + knife.height / 2);
       ctx.rotate(knife.angle);
       ctx.translate(-knife.width / 2, -knife.height / 2);
-      drawKnife(ctx);
+      bladeDrawers[bladeIndex](ctx);
       ctx.restore();
 
       requestAnimationFrame(animate);
