@@ -13,13 +13,30 @@
       display: block;
       background: #222;
     }
+    #addSwordBtn {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 18px;
+      font-size: 18px;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 2;
+      opacity: 0.92;
+    }
   </style>
 </head>
 <body>
+  <button id="addSwordBtn">Add Sword</button>
   <canvas id="dvdCanvas"></canvas>
   <script>
     const canvas = document.getElementById('dvdCanvas');
     const ctx = canvas.getContext('2d');
+    const addSwordBtn = document.getElementById('addSwordBtn');
 
     // Set canvas to window size
     function resizeCanvas() {
@@ -29,42 +46,47 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Blade properties (rotates around hilt at x, y)
-    const blade = {
-      x: canvas.width / 2,
-      y: canvas.height / 2,
-      width: 70,
-      height: 20,
-      angle: 0,
-      spinSpeed: 0.08,
-      speed: 5
-    };
+    // Blade definition
+    function makeBlade(x, y, vx, vy, spinSpeed) {
+      return {
+        x,
+        y,
+        vx,
+        vy,
+        angle: 0,
+        spinSpeed,
+        width: 70,
+        height: 20
+      };
+    }
 
-    // Dot properties
+    // Blades array: first is player-controlled
+    const blades = [
+      makeBlade(canvas.width / 2, canvas.height / 2, 0, 0, 0.08)
+    ];
+
+    // Dot definition
     const dot = {
       x: Math.random() * (canvas.width - 30) + 15,
       y: Math.random() * (canvas.height - 30) + 15,
       radius: 10
     };
 
-    // WASD movement
+    // WASD movement for first blade
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
     window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-    // Draw blade (rotate around hilt)
+    // Draw blade (rotates around hilt)
     function drawBlade(ctx) {
       ctx.save();
-      ctx.rotate(blade.angle);
-
+      ctx.rotate(0);
       // Handle (hilt)
       ctx.fillStyle = "#7b3f00";
       ctx.fillRect(-15, 7, 15, 6);
-
       // Blade
       ctx.fillStyle = "#bbb";
       ctx.fillRect(0, 5, 40, 10);
-
       // Tip
       ctx.fillStyle = "#e0e0e0";
       ctx.beginPath();
@@ -73,7 +95,6 @@
       ctx.lineTo(40, 15);
       ctx.closePath();
       ctx.fill();
-
       // Pixelation effect
       ctx.strokeStyle = "rgba(0,0,0,0.15)";
       for (let i = -15; i < 56; i += 5) {
@@ -100,16 +121,58 @@
       ctx.closePath();
     }
 
-    // Check collision between blade tip and dot
-    function checkCollision() {
-      // Calculate blade tip position after rotation
-      const tipLocal = { x: 55, y: 10 }; // tip relative to hilt
-      const tipX = blade.x + tipLocal.x * Math.cos(blade.angle) - tipLocal.y * Math.sin(blade.angle);
-      const tipY = blade.y + tipLocal.x * Math.sin(blade.angle) + tipLocal.y * Math.cos(blade.angle);
+    // Collision check: dot vs blade polygon
+    function checkDotBladeCollision(blade) {
+      // Blade corners in local coordinates
+      const bladePoly = [
+        {x: -15, y: 7},    // handle left top
+        {x: -15, y: 13},   // handle left bottom
+        {x: 55, y: 13},    // tip bottom
+        {x: 55, y: 7}      // tip top
+      ];
 
-      const dx = tipX - dot.x;
-      const dy = tipY - dot.y;
-      return Math.sqrt(dx*dx + dy*dy) < dot.radius + 6; // 6 is tip thickness
+      // Transform each point by blade's position and angle
+      const worldPoly = bladePoly.map(pt => {
+        const cos = Math.cos(blade.angle);
+        const sin = Math.sin(blade.angle);
+        return {
+          x: blade.x + pt.x * cos - pt.y * sin,
+          y: blade.y + pt.x * sin + pt.y * cos
+        };
+      });
+
+      // Dot-to-polygon collision: check if dot center is inside polygon or close to any edge
+      function pointInPoly(px, py, poly) {
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+          const xi = poly[i].x, yi = poly[i].y;
+          const xj = poly[j].x, yj = poly[j].y;
+          const intersect = ((yi > py) !== (yj > py)) &&
+            (px < (xj - xi) * (py - yi) / (yj - yi + 0.0001) + xi);
+          if (intersect) inside = !inside;
+        }
+        return inside;
+      }
+
+      // If dot center is inside polygon
+      if (pointInPoly(dot.x, dot.y, worldPoly)) return true;
+
+      // Or if dot is close to any edge
+      for (let i = 0; i < worldPoly.length; i++) {
+        const a = worldPoly[i];
+        const b = worldPoly[(i+1)%worldPoly.length];
+        // Closest point on line segment to dot center
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const l2 = dx*dx + dy*dy;
+        let t = ((dot.x - a.x) * dx + (dot.y - a.y) * dy) / l2;
+        t = Math.max(0, Math.min(1, t));
+        const closestX = a.x + t * dx;
+        const closestY = a.y + t * dy;
+        const dist = Math.hypot(closestX - dot.x, closestY - dot.y);
+        if (dist < dot.radius) return true;
+      }
+      return false;
     }
 
     function respawnDot() {
@@ -117,33 +180,57 @@
       dot.y = Math.random() * (canvas.height - 30) + 15;
     }
 
+    // Add Sword button handler
+    addSwordBtn.onclick = () => {
+      const x = Math.random() * (canvas.width - 100) + 50;
+      const y = Math.random() * (canvas.height - 100) + 50;
+      // Random movement and spin
+      const vx = Math.random() * 6 - 3;
+      const vy = Math.random() * 6 - 3;
+      const spinSpeed = Math.random() * 0.15 + 0.05;
+      blades.push(makeBlade(x, y, vx, vy, spinSpeed));
+    };
+
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Move blade with WASD
-      if (keys['w']) blade.y -= blade.speed;
-      if (keys['s']) blade.y += blade.speed;
-      if (keys['a']) blade.x -= blade.speed;
-      if (keys['d']) blade.x += blade.speed;
+      // Move player blade (index 0) with WASD
+      const playerBlade = blades[0];
+      if (keys['w']) playerBlade.y -= 5;
+      if (keys['s']) playerBlade.y += 5;
+      if (keys['a']) playerBlade.x -= 5;
+      if (keys['d']) playerBlade.x += 5;
+      // Keep player blade in bounds
+      playerBlade.x = Math.max(0, Math.min(canvas.width, playerBlade.x));
+      playerBlade.y = Math.max(0, Math.min(canvas.height, playerBlade.y));
 
-      // Keep blade in bounds (hilt position)
-      blade.x = Math.max(0, Math.min(canvas.width, blade.x));
-      blade.y = Math.max(0, Math.min(canvas.height, blade.y));
+      // Move other blades (index > 0)
+      for (let i = 1; i < blades.length; ++i) {
+        const blade = blades[i];
+        blade.x += blade.vx;
+        blade.y += blade.vy;
+        // Bounce off walls
+        if (blade.x < 0 || blade.x > canvas.width) blade.vx *= -1;
+        if (blade.y < 0 || blade.y > canvas.height) blade.vy *= -1;
+      }
 
-      // Spin blade
-      blade.angle += blade.spinSpeed;
+      // Spin all blades
+      blades.forEach(blade => blade.angle += blade.spinSpeed);
 
-      // Draw blade (rotates around hilt)
-      ctx.save();
-      ctx.translate(blade.x, blade.y);
-      drawBlade(ctx);
-      ctx.restore();
+      // Draw blades
+      blades.forEach(blade => {
+        ctx.save();
+        ctx.translate(blade.x, blade.y);
+        ctx.rotate(blade.angle);
+        drawBlade(ctx);
+        ctx.restore();
+      });
 
       // Draw dot
       drawDot(ctx);
 
-      // Check collision
-      if (checkCollision()) {
+      // Check collision for all blades
+      if (blades.some(checkDotBladeCollision)) {
         respawnDot();
       }
 
