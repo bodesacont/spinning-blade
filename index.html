@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Spinning Pixelated Knife (DVD Logo Style)</title>
+  <title>Spinning Blade Game</title>
   <style>
     body {
       margin: 0;
@@ -29,183 +29,123 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Blade types
-    const bladeDrawers = [
-      // Knife (Default)
-      function(ctx) {
-        ctx.fillStyle = "#bbb";
-        ctx.fillRect(0, 5, 40, 10);
-        ctx.fillStyle = "#e0e0e0";
-        ctx.beginPath();
-        ctx.moveTo(40, 5);
-        ctx.lineTo(55, 10);
-        ctx.lineTo(40, 15);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = "#7b3f00";
-        ctx.fillRect(-15, 7, 15, 6);
-        ctx.fillStyle = "#333";
-        ctx.fillRect(-10, 8, 3, 4);
-        ctx.fillRect(-5, 8, 3, 4);
-        // Pixelation effect
-        ctx.strokeStyle = "rgba(0,0,0,0.15)";
-        for (let i = -15; i < 56; i += 5) {
-          ctx.beginPath();
-          ctx.moveTo(i, 0);
-          ctx.lineTo(i, 20);
-          ctx.stroke();
-        }
-        for (let j = 0; j <= 20; j += 5) {
-          ctx.beginPath();
-          ctx.moveTo(-15, j);
-          ctx.lineTo(55, j);
-          ctx.stroke();
-        }
-      },
-      // Katana
-      function(ctx) {
-        // Blade
-        ctx.fillStyle = "#dde";
-        ctx.fillRect(0, 8, 60, 6);
-        ctx.fillStyle = "#aaa";
-        ctx.beginPath();
-        ctx.moveTo(60, 8);
-        ctx.lineTo(70, 11);
-        ctx.lineTo(60, 14);
-        ctx.closePath();
-        ctx.fill();
-        // Handle
-        ctx.fillStyle = "#4b1b07";
-        ctx.fillRect(-20, 9, 20, 4);
-        // Guard
-        ctx.fillStyle = "#cfc200";
-        ctx.fillRect(-2, 7, 4, 10);
-        // Pixelation effect
-        ctx.strokeStyle = "rgba(0,0,0,0.15)";
-        for (let i = -20; i < 71; i += 5) {
-          ctx.beginPath();
-          ctx.moveTo(i, 0);
-          ctx.lineTo(i, 20);
-          ctx.stroke();
-        }
-        for (let j = 0; j <= 20; j += 5) {
-          ctx.beginPath();
-          ctx.moveTo(-20, j);
-          ctx.lineTo(70, j);
-          ctx.stroke();
-        }
-      },
-      // Longsword
-      function(ctx) {
-        // Blade
-        ctx.fillStyle = "#c0c0c0";
-        ctx.fillRect(0, 6, 50, 8);
-        ctx.fillStyle = "#f8f8f8";
-        ctx.beginPath();
-        ctx.moveTo(50, 6);
-        ctx.lineTo(60, 10);
-        ctx.lineTo(50, 14);
-        ctx.closePath();
-        ctx.fill();
-        // Handle
-        ctx.fillStyle = "#5a3711";
-        ctx.fillRect(-15, 8, 15, 4);
-        // Guard
-        ctx.fillStyle = "#b2a56a";
-        ctx.fillRect(-2, 5, 4, 12);
-        // Pommel
-        ctx.beginPath();
-        ctx.arc(-15, 10, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "#b2a56a";
-        ctx.fill();
-        // Pixelation effect
-        ctx.strokeStyle = "rgba(0,0,0,0.15)";
-        for (let i = -15; i < 61; i += 5) {
-          ctx.beginPath();
-          ctx.moveTo(i, 0);
-          ctx.lineTo(i, 20);
-          ctx.stroke();
-        }
-        for (let j = 0; j <= 20; j += 5) {
-          ctx.beginPath();
-          ctx.moveTo(-15, j);
-          ctx.lineTo(60, j);
-          ctx.stroke();
-        }
-      }
-    ];
-
-    let bladeIndex = 0;
-
-    // Knife properties
-    const knife = {
-      x: Math.random() * (canvas.width - 60) + 30,
-      y: Math.random() * (canvas.height - 60) + 30,
+    // Blade properties (rotates around hilt at x, y)
+    const blade = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
       width: 70,
       height: 20,
-      vx: 3,
-      vy: 2,
       angle: 0,
-      spinSpeed: 0.08
+      spinSpeed: 0.08,
+      speed: 5
     };
 
-    // Checks if mouse is over the blade
-    function isMouseOverBlade(mouseX, mouseY) {
-      // Transform mouse coordinates to blade's rotated system
-      const cx = knife.x + knife.width / 2;
-      const cy = knife.y + knife.height / 2;
-      const dx = mouseX - cx;
-      const dy = mouseY - cy;
-      const r = -knife.angle;
-      // Undo rotation
-      const rx = dx * Math.cos(r) - dy * Math.sin(r);
-      const ry = dx * Math.sin(r) + dy * Math.cos(r);
-      // Check if inside blade rectangle
-      return (
-        rx > -knife.width / 2 &&
-        rx < knife.width / 2 &&
-        ry > -knife.height / 2 &&
-        ry < knife.height / 2
-      );
+    // Dot properties
+    const dot = {
+      x: Math.random() * (canvas.width - 30) + 15,
+      y: Math.random() * (canvas.height - 30) + 15,
+      radius: 10
+    };
+
+    // WASD movement
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+    // Draw blade (rotate around hilt)
+    function drawBlade(ctx) {
+      ctx.save();
+      ctx.rotate(blade.angle);
+
+      // Handle (hilt)
+      ctx.fillStyle = "#7b3f00";
+      ctx.fillRect(-15, 7, 15, 6);
+
+      // Blade
+      ctx.fillStyle = "#bbb";
+      ctx.fillRect(0, 5, 40, 10);
+
+      // Tip
+      ctx.fillStyle = "#e0e0e0";
+      ctx.beginPath();
+      ctx.moveTo(40, 5);
+      ctx.lineTo(55, 10);
+      ctx.lineTo(40, 15);
+      ctx.closePath();
+      ctx.fill();
+
+      // Pixelation effect
+      ctx.strokeStyle = "rgba(0,0,0,0.15)";
+      for (let i = -15; i < 56; i += 5) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, 20);
+        ctx.stroke();
+      }
+      for (let j = 0; j <= 20; j += 5) {
+        ctx.beginPath();
+        ctx.moveTo(-15, j);
+        ctx.lineTo(55, j);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
 
-    canvas.addEventListener('mousedown', function(e) {
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+    // Draw dot
+    function drawDot(ctx) {
+      ctx.beginPath();
+      ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#ff4444";
+      ctx.fill();
+      ctx.closePath();
+    }
 
-      if (isMouseOverBlade(mouseX, mouseY)) {
-        bladeIndex = (bladeIndex + 1) % bladeDrawers.length;
-      }
-    });
+    // Check collision between blade tip and dot
+    function checkCollision() {
+      // Calculate blade tip position after rotation
+      const tipLocal = { x: 55, y: 10 }; // tip relative to hilt
+      const tipX = blade.x + tipLocal.x * Math.cos(blade.angle) - tipLocal.y * Math.sin(blade.angle);
+      const tipY = blade.y + tipLocal.x * Math.sin(blade.angle) + tipLocal.y * Math.cos(blade.angle);
+
+      const dx = tipX - dot.x;
+      const dy = tipY - dot.y;
+      return Math.sqrt(dx*dx + dy*dy) < dot.radius + 6; // 6 is tip thickness
+    }
+
+    function respawnDot() {
+      dot.x = Math.random() * (canvas.width - 30) + 15;
+      dot.y = Math.random() * (canvas.height - 30) + 15;
+    }
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Move knife
-      knife.x += knife.vx;
-      knife.y += knife.vy;
+      // Move blade with WASD
+      if (keys['w']) blade.y -= blade.speed;
+      if (keys['s']) blade.y += blade.speed;
+      if (keys['a']) blade.x -= blade.speed;
+      if (keys['d']) blade.x += blade.speed;
 
-      // Bounce off walls
-      if (knife.x < 0 || knife.x + knife.width > canvas.width) {
-        knife.vx *= -1;
-        knife.angle += Math.PI / 4;
-      }
-      if (knife.y < 0 || knife.y + knife.height > canvas.height) {
-        knife.vy *= -1;
-        knife.angle += Math.PI / 4;
-      }
+      // Keep blade in bounds (hilt position)
+      blade.x = Math.max(0, Math.min(canvas.width, blade.x));
+      blade.y = Math.max(0, Math.min(canvas.height, blade.y));
 
-      // Spin knife
-      knife.angle += knife.spinSpeed;
+      // Spin blade
+      blade.angle += blade.spinSpeed;
 
-      // Draw current blade
+      // Draw blade (rotates around hilt)
       ctx.save();
-      ctx.translate(knife.x + knife.width / 2, knife.y + knife.height / 2);
-      ctx.rotate(knife.angle);
-      ctx.translate(-knife.width / 2, -knife.height / 2);
-      bladeDrawers[bladeIndex](ctx);
+      ctx.translate(blade.x, blade.y);
+      drawBlade(ctx);
       ctx.restore();
+
+      // Draw dot
+      drawDot(ctx);
+
+      // Check collision
+      if (checkCollision()) {
+        respawnDot();
+      }
 
       requestAnimationFrame(animate);
     }
