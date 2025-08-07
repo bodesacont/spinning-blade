@@ -4,15 +4,8 @@
   <meta charset="UTF-8">
   <title>Spinning Blade Game</title>
   <style>
-    body {
-      margin: 0;
-      background: #222;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      background: #222;
-    }
+    body { margin: 0; background: #222; overflow: hidden; }
+    canvas { display: block; background: #222; }
     #deathCount {
       position: absolute;
       top: 16px;
@@ -37,7 +30,6 @@
     const canvas = document.getElementById('dvdCanvas');
     const ctx = canvas.getContext('2d');
     const deathCountDiv = document.getElementById('deathCount');
-
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -45,7 +37,7 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Blade types
+    // Blade types with proper tips
     const bladeTypes = [
       {
         name: "lightsaber-green",
@@ -53,7 +45,6 @@
         tipColor: "#39FF14",
         glow: 18,
         draw: function(ctx, blade) {
-          // Neon glowing blade with matching tip
           ctx.save();
           ctx.shadowColor = blade.bladeColor;
           ctx.shadowBlur = blade.glow;
@@ -67,14 +58,10 @@
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
-
           ctx.fillStyle = blade.hiltColor;
           ctx.fillRect(-15, 7, 15, 6);
-
           ctx.fillStyle = blade.bladeColor;
           ctx.fillRect(0, 5, blade.length - 15, 10);
-
-          // Tip
           ctx.beginPath();
           ctx.moveTo(blade.length - 15, 5);
           ctx.lineTo(blade.length, 10);
@@ -103,13 +90,10 @@
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
-
           ctx.fillStyle = blade.hiltColor;
           ctx.fillRect(-15, 7, 15, 6);
-
           ctx.fillStyle = blade.bladeColor;
           ctx.fillRect(0, 5, blade.length - 15, 10);
-
           ctx.beginPath();
           ctx.moveTo(blade.length - 15, 5);
           ctx.lineTo(blade.length, 10);
@@ -138,13 +122,10 @@
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
-
           ctx.fillStyle = blade.hiltColor;
           ctx.fillRect(-15, 7, 15, 6);
-
           ctx.fillStyle = blade.bladeColor;
           ctx.fillRect(0, 5, blade.length - 15, 10);
-
           ctx.beginPath();
           ctx.moveTo(blade.length - 15, 5);
           ctx.lineTo(blade.length, 10);
@@ -173,13 +154,10 @@
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
-
           ctx.fillStyle = blade.hiltColor;
           ctx.fillRect(-15, 7, 15, 6);
-
           ctx.fillStyle = blade.bladeColor;
           ctx.fillRect(0, 5, blade.length - 15, 10);
-
           ctx.beginPath();
           ctx.moveTo(blade.length - 15, 5);
           ctx.lineTo(blade.length, 10);
@@ -192,7 +170,7 @@
       {
         name: "pencil",
         bladeColor: "#FFD700",
-        tipColor: "#e38d5c", // wood color for pencil
+        tipColor: "#e38d5c",
         glow: 10,
         draw: function(ctx, blade) {
           ctx.save();
@@ -208,14 +186,11 @@
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
-
           ctx.fillStyle = blade.hiltColor;
           ctx.fillRect(-15, 7, 15, 6);
-
           ctx.fillStyle = blade.bladeColor;
           ctx.fillRect(0, 5, blade.length - 15, 10);
-
-          // Pencil tip (wood)
+          // Wood tip
           ctx.beginPath();
           ctx.moveTo(blade.length - 15, 5);
           ctx.lineTo(blade.length, 10);
@@ -223,7 +198,7 @@
           ctx.closePath();
           ctx.fillStyle = blade.tipColor;
           ctx.fill();
-          // Pencil tip (graphite)
+          // Graphite tip
           ctx.beginPath();
           ctx.moveTo(blade.length, 10);
           ctx.lineTo(blade.length - 12, 10);
@@ -262,41 +237,32 @@
       };
     }
 
-    // Start with player blade and one random AI blade
+    // Always start with player and one enemy blade!
     let blades = [
-      makeBlade(
-        canvas.width / 2, canvas.height / 2,
-        0, 0, 0.08, 70, bladeTypes[0], true
-      ),
-      makeBlade(
-        Math.random()*canvas.width, Math.random()*canvas.height,
+      makeBlade(canvas.width / 2, canvas.height / 2, 0, 0, 0.08, 70, bladeTypes[0], true),
+      makeBlade(Math.random()*canvas.width, Math.random()*canvas.height,
         Math.random()*4-2, Math.random()*4-2,
         Math.random()*0.1+0.05,
         Math.floor(Math.random()*60)+50,
-        randomBladeType()
-      )
+        randomBladeType())
     ];
 
-    // Dots
     let dots = [{
       x: Math.random() * (canvas.width - 30) + 15,
       y: Math.random() * (canvas.height - 30) + 15,
       radius: 10
     }];
 
-    // WASD movement for player blade
+    // WASD movement for player
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false;
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-    // Tripling logic for blades (interval: 1s, 3s, 9s, 27s, ...)
+    // Tripling logic for blades
     let tripleTimer = 60;
     let tripleDelay = 60;
 
-    // Sparks
     let sparks = [];
-
-    // Cumulative death count
     let totalKills = 0;
 
     function drawKills(ctx, blade) {
@@ -312,7 +278,6 @@
       ctx.fillText(blade.kills, 0, 0);
       ctx.restore();
     }
-
     function drawHealthBar(ctx, blade) {
       ctx.save();
       ctx.translate(0, -10);
@@ -327,7 +292,6 @@
       ctx.strokeRect(-barWidth/2, 0, barWidth, barHeight);
       ctx.restore();
     }
-
     function drawSparks(ctx) {
       sparks = sparks.filter(spark => spark.life > 0);
       sparks.forEach(spark => {
@@ -345,7 +309,6 @@
         spark.life--;
       });
     }
-
     function drawDot(ctx, dot) {
       ctx.beginPath();
       ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
@@ -353,7 +316,6 @@
       ctx.fill();
       ctx.closePath();
     }
-
     function checkDotBladeCollision(blade, dot) {
       const bladePoly = [
         {x: -15, y: 7},
@@ -394,7 +356,6 @@
       }
       return false;
     }
-
     function checkBladeBladeCollision(b1, b2) {
       const r1 = getBladePolyWorld(b1);
       const r2 = getBladePolyWorld(b2);
@@ -443,12 +404,10 @@
       }
       return true;
     }
-
     function respawnDot(dotObj) {
       dotObj.x = Math.random() * (canvas.width - 30) + 15;
       dotObj.y = Math.random() * (canvas.height - 30) + 15;
     }
-
     function blendColors(c1, c2) {
       function hexToRgb(hex) {
         hex = hex.replace("#","");
@@ -474,10 +433,10 @@
 
       // Tripling ALL blades as a group
       if (--tripleTimer <= 0) {
-        if (blades.length < 243) { // 3^5, five generations
+        if (blades.length < 243) {
           let newBlades = [];
           blades.forEach(b => {
-            for (let t = 0; t < 2; t++) { // spawn 2 new (triple total)
+            for (let t = 0; t < 2; t++) {
               const bladeType = randomBladeType();
               const len = Math.floor(Math.random() * 60) + 40;
               const angle = Math.random() * Math.PI * 2;
@@ -494,7 +453,7 @@
             }
           });
           blades = blades.concat(newBlades);
-          tripleDelay *= 3; // TRIPLING interval: 1s, 3s, 9s, 27s, ...
+          tripleDelay *= 3;
           tripleTimer = tripleDelay;
         } else {
           tripleDelay = 60;
@@ -523,7 +482,7 @@
       // Spin all blades
       blades.forEach(blade => blade.angle += blade.spinSpeed);
 
-      // Dot logic (unchanged)
+      // --- Dot logic ---
       let dotKills = [];
       dots.forEach((dotObj, dotIdx) => {
         blades.forEach((blade, bladeIdx) => {
@@ -539,13 +498,10 @@
           blade.kills += 1;
           totalKills++;
           bladesKilled[kill.dotIdx] = true;
-          // Increase health and blade length on kill
           blade.health = Math.min(blade.maxHealth, blade.health + 20);
           blade.length = Math.min(120, blade.length + 10);
         });
         let killedDotIndices = Object.keys(bladesKilled).map(Number);
-
-        // Dots triple up to 27, then reset to one
         if (dots.length < 27) {
           let newDots = [];
           for (const dotIdx of killedDotIndices) {
@@ -572,11 +528,10 @@
       for (let i = 0; i < blades.length; ++i) {
         for (let j = i + 1; j < blades.length; ++j) {
           if (checkBladeBladeCollision(blades[i], blades[j])) {
-            blades[i].health = Math.max(0, blades[i].health - 2); // LESS health lost!
+            blades[i].health = Math.max(0, blades[i].health - 2);
             blades[j].health = Math.max(0, blades[j].health - 2);
             blades[i].length = Math.max(30, blades[i].length - 5);
             blades[j].length = Math.max(30, blades[j].length - 5);
-            // Spark only if both blades are colored
             if (blades[i].bladeColor && blades[j].bladeColor) {
               let sx = (blades[i].x + blades[j].x) / 2;
               let sy = (blades[i].y + blades[j].y) / 2;
